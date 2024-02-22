@@ -2,8 +2,6 @@ module github.com/john-k/libdns-dnsmadeeasy
 
 go 1.22.0
 
-replace github.com/john-k/dnsmadeeasy => ../dnsmadeeasy
-
 require (
 	github.com/john-k/dnsmadeeasy v1.0.0
 	github.com/libdns/libdns v0.2.1
