@@ -189,7 +189,7 @@ func (p *Provider) DeleteRecords(ctx context.Context, zone string, records []lib
 	for _, id := range deletedRecords {
 		// find our deleted records ID in the original array argument
 		recordId := slices.IndexFunc(records, func(rec libdns.Record) bool {
-			return rec.ID == string(id)
+			return rec.ID == fmt.Sprint(id)
 		})
 		if recordId == -1 {
 			fmt.Printf("Could not find record id %d in supplied list of libdns.Record\n", id)
