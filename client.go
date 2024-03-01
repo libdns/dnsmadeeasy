@@ -1,4 +1,4 @@
-package libdnsdnsmadeeasy
+package dnsmadeeasy
 
 import (
 	"context"
