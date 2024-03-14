@@ -13,9 +13,9 @@ import (
 func (p *Provider) init(ctx context.Context) {
 	p.once.Do(func() {
 		p.client = *dme.GetClient(
-			ctx.Value("APIKey").(string),
-			ctx.Value("SecretKey").(string),
-			ctx.Value("APIEndpoint").(dme.BaseURL),
+			p.APIKey,
+			p.SecretKey,
+			p.APIEndpoint,
 		)
 	})
 }
