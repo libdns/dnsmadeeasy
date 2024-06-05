@@ -31,9 +31,9 @@ func recordFromDmeRecord(dmeRecord dme.Record) libdns.Record {
 	// TODO: enable support for SRV weight field and embedding
 	// "<port> <target>" in value when libdns releases support
 	if dmeRecord.Type == "MX" {
-		rec.Priority = dmeRecord.MxLevel
+		rec.Priority = uint(dmeRecord.MxLevel)
 	} else if dmeRecord.Type == "SRV" {
-		rec.Priority = dmeRecord.Priority
+		rec.Priority = uint(dmeRecord.Priority)
 		//rec.Weight = dmeRecord.Weight
 		//rec.Value = fmt.Sprintf("%d %s", dmeRecord.Port, dmeRecord.Value)
 	}
@@ -53,9 +53,9 @@ func dmeRecordFromRecord(record libdns.Record) (dme.Record, error) {
 	dmeRecord.Value = record.Value
 	dmeRecord.Ttl = int(record.TTL)
 	if record.Type == "MX" {
-		dmeRecord.MxLevel = record.Priority
+		dmeRecord.MxLevel = int(record.Priority)
 	} else if record.Type == "SRV" {
-		dmeRecord.Priority = record.Priority
+		dmeRecord.Priority = int(record.Priority)
 		/*
 			// TODO: enable support for SRV weight field and extracting
 			// "<port> <target>" from value when libdns releases support
