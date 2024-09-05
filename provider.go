@@ -73,6 +73,8 @@ func createRecords(client dme.Client, zone string, records []libdns.Record) ([]l
 
 	var newRecords []libdns.Record
 	for _, dmeRec := range newDmeRecords {
+		// The client.CreateRecords call wraps the value in spurious quotes
+		dmeRec.Value = dmeRec.Value[1 : len(dmeRec.Value)-1]
 		newRec := recordFromDmeRecord(dmeRec)
 		newRecords = append(newRecords, newRec)
 	}
