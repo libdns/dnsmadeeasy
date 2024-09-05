@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"slices"
 	"strconv"
+	"strings"
 	"sync"
 
 	dme "github.com/john-k/dnsmadeeasy"
@@ -74,7 +75,7 @@ func createRecords(client dme.Client, zone string, records []libdns.Record) ([]l
 	var newRecords []libdns.Record
 	for _, dmeRec := range newDmeRecords {
 		// The client.CreateRecords call wraps the value in spurious quotes
-		dmeRec.Value = dmeRec.Value[1 : len(dmeRec.Value)-1]
+		dmeRec.Value = strings.Trim(dmeRec.Value, "\"")
 		newRec := recordFromDmeRecord(dmeRec)
 		newRecords = append(newRecords, newRec)
 	}
