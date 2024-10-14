@@ -30,8 +30,8 @@ func (p *Provider) GetRecords(ctx context.Context, zone string) ([]libdns.Record
 
 	var records []libdns.Record
 
-	// first, get the ID for our zone name
-	zoneId, err := p.client.IdForDomain(zone)
+	// first, get the ID for our zone name -- dnsmadeeasy doesn't use the trailing dot
+	zoneId, err := p.client.IdForDomain(strings.TrimRight(zone, "."))
 	if err != nil {
 		return nil, err
 	}
@@ -53,8 +53,8 @@ func (p *Provider) GetRecords(ctx context.Context, zone string) ([]libdns.Record
 func createRecords(client dme.Client, zone string, records []libdns.Record) ([]libdns.Record, error) {
 	var dmeRecords []dme.Record
 
-	// first, get the ID for our zone name
-	zoneId, err := client.IdForDomain(zone)
+	// first, get the ID for our zone name -- dnsmadeeasy doesn't use the trailing dot
+	zoneId, err := client.IdForDomain(strings.TrimRight(zone, "."))
 	if err != nil {
 		return nil, err
 	}
@@ -99,8 +99,8 @@ func (p *Provider) SetRecords(ctx context.Context, zone string, records []libdns
 	defer p.mutex.Unlock()
 	p.init(ctx)
 
-	// first, get the ID for our zone name
-	zoneId, err := p.client.IdForDomain(zone)
+	// first, get the ID for our zone name -- dnsmadeeasy doesn't use the trailing dot
+	zoneId, err := p.client.IdForDomain(strings.TrimRight(zone, "."))
 	if err != nil {
 		return nil, err
 	}
@@ -165,8 +165,8 @@ func (p *Provider) DeleteRecords(ctx context.Context, zone string, records []lib
 	defer p.mutex.Unlock()
 	p.init(ctx)
 
-	// first, get the ID for our zone name
-	zoneId, err := p.client.IdForDomain(zone)
+	// first, get the ID for our zone name -- dnsmadeeasy doesn't use the trailing dot
+	zoneId, err := p.client.IdForDomain(strings.TrimRight(zone, "."))
 	if err != nil {
 		return nil, err
 	}
