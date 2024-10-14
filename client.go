@@ -43,15 +43,28 @@ func recordFromDmeRecord(dmeRecord dme.Record) libdns.Record {
 
 func dmeRecordFromRecord(record libdns.Record) (dme.Record, error) {
 	var dmeRecord dme.Record
-	id, err := strconv.Atoi(record.ID)
-	if err != nil {
-		return dme.Record{}, err
+	var id int
+	var err error
+	// Since dmeRecord.ID is set to `json:"id,omitempty"`, this properly preserves empty values
+	if record.ID == "" {
+		id = 0
+	} else {
+		id, err = strconv.Atoi(record.ID)
+		if err != nil {
+			return dme.Record{}, err
+		}
 	}
 	dmeRecord.ID = id
 	dmeRecord.Name = record.Name
 	dmeRecord.Type = record.Type
 	dmeRecord.Value = record.Value
 	dmeRecord.Ttl = int(record.TTL)
+	// DNSMadeEasy fails to accept zero TTL, so use a default value
+	if dmeRecord.Ttl == 0 {
+		dmeRecord.Ttl = 120
+	}
+	// Likewise, DNSMadeEasy doesn't accept a blank GtdLocation
+	dmeRecord.GtdLocation = "DEFAULT"
 	if record.Type == "MX" {
 		dmeRecord.MxLevel = int(record.Priority)
 	} else if record.Type == "SRV" {
