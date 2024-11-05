@@ -58,7 +58,7 @@ func dmeRecordFromRecord(record libdns.Record) (dme.Record, error) {
 	dmeRecord.Name = record.Name
 	dmeRecord.Type = record.Type
 	dmeRecord.Value = record.Value
-	dmeRecord.Ttl = int(record.TTL)
+	dmeRecord.Ttl = int(record.TTL.Seconds())
 	// DNSMadeEasy fails to accept zero TTL, so use a default value
 	if dmeRecord.Ttl == 0 {
 		dmeRecord.Ttl = 120

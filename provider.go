@@ -52,7 +52,6 @@ func (p *Provider) GetRecords(ctx context.Context, zone string) ([]libdns.Record
 
 func createRecords(client dme.Client, zone string, records []libdns.Record) ([]libdns.Record, error) {
 	var dmeRecords []dme.Record
-
 	// first, get the ID for our zone name -- dnsmadeeasy doesn't use the trailing dot
 	zoneId, err := client.IdForDomain(strings.TrimRight(zone, "."))
 	if err != nil {
@@ -111,16 +110,22 @@ func (p *Provider) SetRecords(ctx context.Context, zone string, records []libdns
 		return nil, err
 	}
 
-	// split our input records into those that need updating and those that need creating
+	// split our input records into those that need updating and those that need creating.
+	// if an ID is not provided in the record, try to match based on Type and Name
 	var existingRecords []libdns.Record
 	var newRecords []libdns.Record
 	for _, record := range records {
 		foundIdx := slices.IndexFunc(dmeRecords, func(dmeRecord dme.Record) bool {
-			return record.ID != "0" && fmt.Sprint(dmeRecord.ID) == record.ID
+			if record.ID != "0" && record.ID != "" {
+				return fmt.Sprint(dmeRecord.ID) == record.ID
+			} else {
+				return record.Type == dmeRecord.Type && record.Name == dmeRecord.Name
+			}
 		})
 		if foundIdx == -1 {
 			newRecords = append(newRecords, record)
 		} else {
+			record.ID = fmt.Sprint(dmeRecords[foundIdx].ID)
 			existingRecords = append(existingRecords, record)
 		}
 	}
