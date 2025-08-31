@@ -44,7 +44,11 @@ func (p *Provider) GetRecords(ctx context.Context, zone string) ([]libdns.Record
 
 	// translate each DNSMadeEasy Domain Record to a libdns Record
 	for _, rec := range dmeRecords {
-		records = append(records, recordFromDmeRecord(rec))
+		libdns_record, err := recordFromDmeRecord(rec)
+		if err != nil {
+			return nil, err
+		}
+		records = append(records, libdns_record)
 	}
 
 	return records, nil
@@ -75,7 +79,10 @@ func createRecords(client dme.Client, zone string, records []libdns.Record) ([]l
 	for _, dmeRec := range newDmeRecords {
 		// The client.CreateRecords call wraps the value in spurious quotes
 		dmeRec.Value = strings.Trim(dmeRec.Value, "\"")
-		newRec := recordFromDmeRecord(dmeRec)
+		newRec, err := recordFromDmeRecord(dmeRec)
+		if err != nil {
+			return []libdns.Record{}, err
+		}
 		newRecords = append(newRecords, newRec)
 	}
 
@@ -153,7 +160,11 @@ func (p *Provider) SetRecords(ctx context.Context, zone string, records []libdns
 	// convert the DME Records to libdns records
 	var updatedRecords []libdns.Record
 	for _, record := range updatedDmeRecords {
-		updatedRecords = append(updatedRecords, recordFromDmeRecord(record))
+		libdns_record, err := recordFromDmeRecord(record)
+		if err != nil {
+			return nil, err
+		}
+		updatedRecords = append(updatedRecords, libdns_record)
 	}
 
 	// create new records

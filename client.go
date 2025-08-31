@@ -20,7 +20,7 @@ func (p *Provider) init(ctx context.Context) {
 	})
 }
 
-func recordFromDmeRecord(dmeRecord dme.Record) libdns.Record {
+func recordFromDmeRecord(dmeRecord dme.Record) (libdns.Record, error) {
 	return libdns.RR{
 		ID:   fmt.Sprint(dmeRecord.ID),
 		Name: dmeRecord.Name,
