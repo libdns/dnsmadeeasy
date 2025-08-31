@@ -47,7 +47,7 @@ func dmeRecordFromRecord(r libdns.Record) (dme.Record, error) {
 	dmeRecord.ID = id
 	dmeRecord.Name = rr.Name
 	dmeRecord.Type = rr.Type
-	dmeRecord.Value = rr.Value
+	dmeRecord.Value = rr.Data
 	dmeRecord.Ttl = int(rr.TTL.Seconds())
 	// DNSMadeEasy fails to accept zero TTL, so use a default value
 	if dmeRecord.Ttl == 0 {
@@ -56,9 +56,17 @@ func dmeRecordFromRecord(r libdns.Record) (dme.Record, error) {
 	// Likewise, DNSMadeEasy doesn't accept a blank GtdLocation
 	dmeRecord.GtdLocation = "DEFAULT"
 	if rr.Type == "MX" {
-		dmeRecord.MxLevel = int(rr.Parse().Priority)
+		mx_rec, err := rr.Parse()
+		if err != nil {
+			return dme.Record{}, err
+		}
+		dmeRecord.MxLevel = int(mx_rec.Priority)
 	} else if rr.Type == "SRV" {
-		dmeRecord.Priority = int(rr.Parse().Priority)
+		srv_rec, err := rr.Parse()
+		if err != nil {
+			return dme.Record{}, err
+		}
+		dmeRecord.Priority = int(srv_rec.Priority)
 		/*
 			// TODO: enable support for SRV weight field and extracting
 			// "<port> <target>" from value when libdns releases support
