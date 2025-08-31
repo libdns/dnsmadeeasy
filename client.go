@@ -21,30 +21,20 @@ func (p *Provider) init(ctx context.Context) {
 }
 
 func recordFromDmeRecord(dmeRecord dme.Record) libdns.Record {
-	var rec libdns.Record
-	rec.ID = fmt.Sprint(dmeRecord.ID)
-	rec.Type = dmeRecord.Type
-	rec.Name = dmeRecord.Name
-	rec.Value = dmeRecord.Value
-	rec.TTL = time.Duration(dmeRecord.Ttl)
-
-	// TODO: enable support for SRV weight field and embedding
-	// "<port> <target>" in value when libdns releases support
-	if dmeRecord.Type == "MX" {
-		rec.Priority = uint(dmeRecord.MxLevel)
-	} else if dmeRecord.Type == "SRV" {
-		rec.Priority = uint(dmeRecord.Priority)
-		//rec.Weight = dmeRecord.Weight
-		//rec.Value = fmt.Sprintf("%d %s", dmeRecord.Port, dmeRecord.Value)
-	}
-
-	return rec
+	return libdns.RR{
+		ID:   fmt.Sprint(dmeRecord.ID),
+		Name: dmeRecord.Name,
+		TTL:  time.Duration(dmeRecord.Ttl),
+		Type: dmeRecord.Type,
+		Data: dmeRecord.Value,
+	}.Parse()
 }
 
-func dmeRecordFromRecord(record libdns.Record) (dme.Record, error) {
+func dmeRecordFromRecord(r libdns.Record) (dme.Record, error) {
 	var dmeRecord dme.Record
 	var id int
 	var err error
+	rr := r.RR()
 	// Since dmeRecord.ID is set to `json:"id,omitempty"`, this properly preserves empty values
 	if record.ID == "" {
 		id = 0
@@ -55,10 +45,10 @@ func dmeRecordFromRecord(record libdns.Record) (dme.Record, error) {
 		}
 	}
 	dmeRecord.ID = id
-	dmeRecord.Name = record.Name
-	dmeRecord.Type = record.Type
-	dmeRecord.Value = record.Value
-	dmeRecord.Ttl = int(record.TTL.Seconds())
+	dmeRecord.Name = rr.Name
+	dmeRecord.Type = rr.Type
+	dmeRecord.Value = rr.Value
+	dmeRecord.Ttl = int(rr.TTL.Seconds())
 	// DNSMadeEasy fails to accept zero TTL, so use a default value
 	if dmeRecord.Ttl == 0 {
 		dmeRecord.Ttl = 120
@@ -66,9 +56,9 @@ func dmeRecordFromRecord(record libdns.Record) (dme.Record, error) {
 	// Likewise, DNSMadeEasy doesn't accept a blank GtdLocation
 	dmeRecord.GtdLocation = "DEFAULT"
 	if record.Type == "MX" {
-		dmeRecord.MxLevel = int(record.Priority)
+		dmeRecord.MxLevel = int(rr.Priority)
 	} else if record.Type == "SRV" {
-		dmeRecord.Priority = int(record.Priority)
+		dmeRecord.Priority = int(rr.Priority)
 		/*
 			// TODO: enable support for SRV weight field and extracting
 			// "<port> <target>" from value when libdns releases support
