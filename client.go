@@ -36,10 +36,10 @@ func dmeRecordFromRecord(r libdns.Record) (dme.Record, error) {
 	var err error
 	rr := r.RR()
 	// Since dmeRecord.ID is set to `json:"id,omitempty"`, this properly preserves empty values
-	if record.ID == "" {
+	if rr.ID == "" {
 		id = 0
 	} else {
-		id, err = strconv.Atoi(record.ID)
+		id, err = strconv.Atoi(rr.ID)
 		if err != nil {
 			return dme.Record{}, err
 		}
@@ -55,9 +55,9 @@ func dmeRecordFromRecord(r libdns.Record) (dme.Record, error) {
 	}
 	// Likewise, DNSMadeEasy doesn't accept a blank GtdLocation
 	dmeRecord.GtdLocation = "DEFAULT"
-	if record.Type == "MX" {
+	if rr.Type == "MX" {
 		dmeRecord.MxLevel = int(rr.Priority)
-	} else if record.Type == "SRV" {
+	} else if rr.Type == "SRV" {
 		dmeRecord.Priority = int(rr.Priority)
 		/*
 			// TODO: enable support for SRV weight field and extracting
