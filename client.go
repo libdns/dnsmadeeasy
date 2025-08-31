@@ -60,7 +60,7 @@ func dmeRecordFromRecord(r libdns.Record) (dme.Record, error) {
 		if err != nil {
 			return dme.Record{}, err
 		}
-		dmeRecord.MxLevel = int(mx_rec.Priority)
+		dmeRecord.MxLevel = int(mx_rec.Preference)
 	} else if rr.Type == "SRV" {
 		srv_rec, err := rr.Parse()
 		if err != nil {

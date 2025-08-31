@@ -133,9 +133,10 @@ func (p *Provider) SetRecords(ctx context.Context, zone string, records []libdns
 
 	var dmeRecordsToUpdate []dme.Record
 	for _, record := range existingRecords {
+		rr := record.RR()
 		newRecord, err := dmeRecordFromRecord(record)
 		if err != nil {
-			fmt.Printf("Could not convert %s record for %s: %s", record.Type, record.Name, err)
+			fmt.Printf("Could not convert %s record for %s: %s", rr.Type, rr.Name, err)
 			continue
 		}
 		dmeRecordsToUpdate = append(dmeRecordsToUpdate, newRecord)
