@@ -115,17 +115,18 @@ func (p *Provider) SetRecords(ctx context.Context, zone string, records []libdns
 	var existingRecords []libdns.Record
 	var newRecords []libdns.Record
 	for _, record := range records {
+		rr := record.RR()
 		foundIdx := slices.IndexFunc(dmeRecords, func(dmeRecord dme.Record) bool {
-			if record.ID != "0" && record.ID != "" {
-				return fmt.Sprint(dmeRecord.ID) == record.ID
+			if rr.ID != "0" && rr.ID != "" {
+				return fmt.Sprint(dmeRecord.ID) == rr.ID
 			} else {
-				return record.Type == dmeRecord.Type && record.Name == dmeRecord.Name
+				return rr.Type == dmeRecord.Type && rr.Name == dmeRecord.Name
 			}
 		})
 		if foundIdx == -1 {
 			newRecords = append(newRecords, record)
 		} else {
-			record.ID = fmt.Sprint(dmeRecords[foundIdx].ID)
+			rr.ID = fmt.Sprint(dmeRecords[foundIdx].ID)
 			existingRecords = append(existingRecords, record)
 		}
 	}
