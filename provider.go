@@ -2,9 +2,7 @@ package dnsmadeeasy
 
 import (
 	"context"
-	"fmt"
 	"slices"
-	"strconv"
 	"strings"
 	"sync"
 
@@ -44,7 +42,11 @@ func (p *Provider) GetRecords(ctx context.Context, zone string) ([]libdns.Record
 
 	// translate each DNSMadeEasy Domain Record to a libdns Record
 	for _, rec := range dmeRecords {
-		records = append(records, recordFromDmeRecord(rec))
+		record, err := recordFromDmeRecord(rec)
+		if err != nil {
+			return nil, err
+		}
+		records = append(records, record)
 	}
 
 	return records, nil
@@ -73,9 +75,10 @@ func createRecords(client dme.Client, zone string, records []libdns.Record) ([]l
 
 	var newRecords []libdns.Record
 	for _, dmeRec := range newDmeRecords {
-		// The client.CreateRecords call wraps the value in spurious quotes
-		dmeRec.Value = strings.Trim(dmeRec.Value, "\"")
-		newRec := recordFromDmeRecord(dmeRec)
+		newRec, err := recordFromDmeRecord(dmeRec)
+		if err != nil {
+			return nil, err
+		}
 		newRecords = append(newRecords, newRec)
 	}
 
@@ -112,32 +115,23 @@ func (p *Provider) SetRecords(ctx context.Context, zone string, records []libdns
 
 	// split our input records into those that need updating and those that need creating.
 	// if an ID is not provided in the record, try to match based on Type and Name
-	var existingRecords []libdns.Record
 	var newRecords []libdns.Record
+	var dmeRecordsToUpdate []dme.Record
 	for _, record := range records {
+		rr := record.RR()
 		foundIdx := slices.IndexFunc(dmeRecords, func(dmeRecord dme.Record) bool {
-			if record.ID != "0" && record.ID != "" {
-				return fmt.Sprint(dmeRecord.ID) == record.ID
-			} else {
-				return record.Type == dmeRecord.Type && record.Name == dmeRecord.Name
-			}
+			return rr.Type == dmeRecord.Type && rr.Name == dmeRecord.Name
 		})
 		if foundIdx == -1 {
 			newRecords = append(newRecords, record)
 		} else {
-			record.ID = fmt.Sprint(dmeRecords[foundIdx].ID)
-			existingRecords = append(existingRecords, record)
+			dmeRecord, err := dmeRecordFromRecord(record)
+			if err != nil {
+				return nil, err
+			}
+			dmeRecord.ID = dmeRecords[foundIdx].ID
+			dmeRecordsToUpdate = append(dmeRecordsToUpdate, dmeRecord)
 		}
-	}
-
-	var dmeRecordsToUpdate []dme.Record
-	for _, record := range existingRecords {
-		newRecord, err := dmeRecordFromRecord(record)
-		if err != nil {
-			fmt.Printf("Could not convert %s record for %s: %s", record.Type, record.Name, err)
-			continue
-		}
-		dmeRecordsToUpdate = append(dmeRecordsToUpdate, newRecord)
 	}
 
 	// update existing records
@@ -151,7 +145,11 @@ func (p *Provider) SetRecords(ctx context.Context, zone string, records []libdns
 	// convert the DME Records to libdns records
 	var updatedRecords []libdns.Record
 	for _, record := range updatedDmeRecords {
-		updatedRecords = append(updatedRecords, recordFromDmeRecord(record))
+		updatedRecord, err := recordFromDmeRecord(record)
+		if err != nil {
+			return nil, err
+		}
+		updatedRecords = append(updatedRecords, updatedRecord)
 	}
 
 	// create new records
@@ -176,16 +174,28 @@ func (p *Provider) DeleteRecords(ctx context.Context, zone string, records []lib
 		return nil, err
 	}
 
-	// convert an array of records into an array of integer
-	// record ID to pass to the DME library
+	dmeRecords, err := p.client.EnumerateRecords(zoneId)
+	if err != nil {
+		return nil, err
+	}
+
 	var recordsToDelete []int
-	for _, record := range records {
-		id, err := strconv.Atoi(record.ID)
+	recordsByID := make(map[int]libdns.Record)
+	for _, dmeRecord := range dmeRecords {
+		candidate, err := recordFromDmeRecord(dmeRecord)
 		if err != nil {
-			fmt.Printf("Could not convert id '%s' to integer", record.ID)
-			continue
+			return nil, err
 		}
-		recordsToDelete = append(recordsToDelete, id)
+		for _, record := range records {
+			if recordsMatch(record, candidate) {
+				recordsToDelete = append(recordsToDelete, dmeRecord.ID)
+				recordsByID[dmeRecord.ID] = candidate
+				break
+			}
+		}
+	}
+	if len(recordsToDelete) == 0 {
+		return []libdns.Record{}, nil
 	}
 
 	deletedRecords, err := p.client.DeleteRecords(zoneId, recordsToDelete)
@@ -195,17 +205,9 @@ func (p *Provider) DeleteRecords(ctx context.Context, zone string, records []lib
 
 	var returnRecords []libdns.Record
 	for _, id := range deletedRecords {
-		// find our deleted records ID in the original array argument
-		recordId := slices.IndexFunc(records, func(rec libdns.Record) bool {
-			return rec.ID == fmt.Sprint(id)
-		})
-		if recordId == -1 {
-			fmt.Printf("Could not find record id %d in supplied list of libdns.Record\n", id)
-			continue
+		if record, ok := recordsByID[id]; ok {
+			returnRecords = append(returnRecords, record)
 		}
-
-		// add the full record to the array to be returned
-		returnRecords = append(returnRecords, records[recordId])
 	}
 
 	return returnRecords, nil
