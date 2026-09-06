@@ -4,7 +4,7 @@ go 1.18.0
 
 require (
 	github.com/john-k/dnsmadeeasy v1.1.0
-	github.com/libdns/libdns v0.2.2
+	github.com/libdns/libdns v1.1.1
 )
 
 require (
